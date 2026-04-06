@@ -1,27 +1,50 @@
 import store from "../services/store.service.js";
+import { appendLog } from "../utils/wal.js";
 export async function set(req, res) {
-    const { key, value } = req.body;
-    if (!key || !value) {
-        throw new Error("key string and its value are required");
+    try {
+        const { key, value } = req.body || {};
+        if (key === undefined || value === undefined) {
+            return res
+                .status(400)
+                .json({
+                status: 400,
+                message: "key string and its value are required",
+            });
+        }
+        if (key === "" || value === "") {
+            return res
+                .status(400)
+                .json({ status: 400, message: "key and value string cannot be empty" });
+        }
+        store.set(key, value);
+        await appendLog({ method: "PUT", key, value });
+        return res.status(201).json({
+            status: 201,
+            message: "key and value stored successfully",
+        });
     }
-    if (key == "") {
-        throw new Error("key string cannot be empty");
+    catch (error) {
+        if (error.code === "ENOENT")
+            return;
+        throw error;
     }
-    store.set(key, value);
-    res.status(201).json({
-        status: 201,
-        message: "key and value stored successfully",
-    });
 }
 export async function get(req, res) {
-    const { key } = req.body;
-    if (!key) {
-        throw new Error("key string and its value are required");
+    const key = req.params.key;
+    if (key === undefined) {
+        return res.status(400).json({ status: 400, message: "key is required" });
     }
-    if (key == "") {
-        throw new Error("key string cannot be empty");
+    if (key === "") {
+        return res
+            .status(400)
+            .json({ status: 400, message: "key cannot be empty" });
     }
     const value = store.get(key);
+    if (value === undefined) {
+        return res
+            .status(404)
+            .json({ status: 404, message: "key not found", data: null });
+    }
     res.status(200).json({
         status: 200,
         message: "key fetched successfullt",
@@ -29,29 +52,31 @@ export async function get(req, res) {
     });
 }
 export async function remove(req, res) {
-    const { key } = req.body;
-    if (!key) {
-        throw new Error("key string and its value are required");
+    try {
+        const key = req.params.key;
+        if (!key) {
+            return res.status(400).json({ status: 400, message: "key is required" });
+        }
+        if (key === "") {
+            return res
+                .status(400)
+                .json({ status: 400, message: "key cannot be empty" });
+        }
+        if (!store.has(key)) {
+            return res.status(404).json({ status: 404, message: "key not found" });
+        }
+        store.remove(key);
+        await appendLog({ method: "DELETE", key });
+        res.status(200).json({
+            status: 200,
+            message: "key removed successfully",
+            data: null,
+        });
     }
-    if (key == "") {
-        throw new Error("key string cannot be empty");
+    catch (error) {
+        if (error.code === "ENOENT")
+            return;
+        throw error;
     }
-    const value = store.remove(key);
-    res.status(200).json({
-        status: 200,
-        message: "key removed successfullt",
-        data: null,
-    });
-}
-export async function getStore(req, res) {
-    const kvStore = store.getStore();
-    if (!kvStore) {
-        throw new Error("store is empty or no initialized");
-    }
-    res.status(200).json({
-        status: 200,
-        message: "key fetched successfullt",
-        data: kvStore,
-    });
 }
 //# sourceMappingURL=store.controller.js.map
