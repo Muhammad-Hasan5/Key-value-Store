@@ -1,7 +1,10 @@
+import { recovery } from "../utils/wal.js";
 class Store {
     constructor() {
-        this.store = undefined;
         this.store = new Map();
+        async () => {
+            await recovery(this.store);
+        };
     }
     set(key, value) {
         this.store?.set(key, value);
@@ -12,11 +15,8 @@ class Store {
     remove(key) {
         this.store?.delete(key);
     }
-    getStore() {
-        if (!this.store) {
-            throw new Error("store is not initialized");
-        }
-        return this.store.entries;
+    has(key) {
+        return store?.has(key) ?? false;
     }
 }
 const store = new Store();
