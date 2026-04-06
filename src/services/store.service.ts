@@ -1,15 +1,20 @@
+import { recovery } from "../utils/wal.js";
+
 class Store {
-  store: Map<string, any> | undefined = undefined;
+  store: Map<string, string>;
 
   constructor() {
     this.store = new Map();
+    async () => {
+      await recovery(this.store);
+    }
   }
 
-  set(key: string, value: any): void {
+  set(key: string, value: string): void {
     this.store?.set(key, value);
   }
 
-  get(key: string): any {
+  get(key: string): string | undefined {
     return this.store?.get(key);
   }
 
@@ -18,7 +23,7 @@ class Store {
   }
 
   has(key: string): boolean{
-    return store.has(key) ?? false
+    return store?.has(key) ?? false
   }
 
 }
