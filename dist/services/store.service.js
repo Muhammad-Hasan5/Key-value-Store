@@ -1,11 +1,21 @@
-import { recovery } from "../utils/wal.js";
+import wal from "../utils/wal.js";
+import snapshot from "./snapshot.service.js";
 class Store {
     constructor() {
         this.store = new Map();
-        async () => {
-            await recovery(this.store);
-        };
     }
+    async init() {
+        try {
+            const store = await snapshot.loadSnapshot();
+            await wal.recovery(store);
+        }
+        catch (error) {
+            if (error.code === "ENOENT")
+                return this.store;
+            throw error;
+        }
+    }
+    ;
     set(key, value) {
         this.store?.set(key, value);
     }
@@ -16,7 +26,10 @@ class Store {
         this.store?.delete(key);
     }
     has(key) {
-        return store?.has(key) ?? false;
+        return this.store?.has(key) ?? false;
+    }
+    getAll() {
+        return new Map(this.store);
     }
 }
 const store = new Store();
