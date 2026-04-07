@@ -1,4 +1,4 @@
-import { recovery } from "../utils/wal.js";
+import wal from "../utils/wal.js";
 
 class Store {
   store: Map<string, string>;
@@ -6,7 +6,7 @@ class Store {
   constructor() {
     this.store = new Map();
     async () => {
-      await recovery(this.store);
+      await wal.recovery(this.store);
     }
   }
 

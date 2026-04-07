@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import store from "../services/store.service.js";
-import { appendLog } from "../utils/wal.js";
+import wal from "../utils/wal.js";
 
 type Params = {
   key: string;
@@ -26,7 +26,7 @@ export async function set(req: Request, res: Response) {
     }
 
     store.set(key, value);
-    await appendLog({method: "PUT", key, value});
+    await wal.appendLog({method: "PUT", key, value});
 
     return res.status(201).json({
       status: 201,
@@ -85,7 +85,7 @@ export async function remove(req: Request<Params>, res: Response) {
     }
 
     store.remove(key);
-    await appendLog({ method: "DELETE", key });
+    await wal.appendLog({ method: "DELETE", key });
 
     res.status(200).json({
       status: 200,
