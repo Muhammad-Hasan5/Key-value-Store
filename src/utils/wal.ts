@@ -1,7 +1,5 @@
 //write-ahead log
-
 import fs from "node:fs/promises";
-import path from "node:path";
 
 interface pair {
   method: "PUT" | "DELETE";
@@ -11,12 +9,9 @@ interface pair {
 
 class WAL {
   private queue: pair[] = [];
-  private isFlushing: boolean = false;
-  private LOG_FILE = path.join(process.cwd(), "store.json");
-
-  constructor() {
-    setInterval(() => this.flush(), 10);
-  }
+  public isFlushing: boolean = false;
+  private paused: boolean = false;
+  private LOG_FILE = String(process.env.LOG_FILE);
 
   private async flush() {
     if (this.isFlushing) return;
@@ -38,7 +33,33 @@ class WAL {
     }
   }
 
+  private async waitUntilResume() {
+    return new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        if (!this.paused) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 1);
+    });
+  }
+
+  constructor() {
+    setInterval(() => this.flush(), 10);
+  }
+
+  pause() {
+    this.paused = true;
+  }
+
+  resume() {
+    this.paused = true;
+  }
+
   async appendLog(entry: pair) {
+    if (this.paused) {
+      await this.waitUntilResume();
+    }
     this.queue.push(entry);
   }
 
