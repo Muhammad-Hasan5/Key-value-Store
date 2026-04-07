@@ -1,12 +1,16 @@
 import app from "./app.js";
+import { startCompaction } from "./utils/compaction.js";
+import store from "./services/store.service.js";
 console.log("Hello key-value store");
+await store.init();
 process.loadEnvFile();
 const port = process.env.PORT;
 if (!port) {
     console.log("Port is not defined");
     process.exit(1);
 }
-app.listen(port, () => {
+app.listen(port, async () => {
     console.log(`Server is running on port ${port}`);
+    await startCompaction();
 });
 //# sourceMappingURL=index.js.map
