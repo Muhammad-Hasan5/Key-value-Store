@@ -26,7 +26,7 @@ export async function set(req: Request, res: Response) {
     }
 
     store.set(key, value);
-    await wal.appendLog({method: "PUT", key, value});
+    wal.appendLog({method: "PUT", key, value});
 
     return res.status(201).json({
       status: 201,
@@ -85,7 +85,7 @@ export async function remove(req: Request<Params>, res: Response) {
     }
 
     store.remove(key);
-    await wal.appendLog({ method: "DELETE", key });
+    wal.appendLog({ method: "DELETE", key });
 
     res.status(200).json({
       status: 200,

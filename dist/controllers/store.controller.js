@@ -1,5 +1,5 @@
 import store from "../services/store.service.js";
-import { appendLog } from "../utils/wal.js";
+import wal from "../utils/wal.js";
 export async function set(req, res) {
     try {
         const { key, value } = req.body || {};
@@ -17,7 +17,7 @@ export async function set(req, res) {
                 .json({ status: 400, message: "key and value string cannot be empty" });
         }
         store.set(key, value);
-        await appendLog({ method: "PUT", key, value });
+        wal.appendLog({ method: "PUT", key, value });
         return res.status(201).json({
             status: 201,
             message: "key and value stored successfully",
@@ -66,7 +66,7 @@ export async function remove(req, res) {
             return res.status(404).json({ status: 404, message: "key not found" });
         }
         store.remove(key);
-        await appendLog({ method: "DELETE", key });
+        wal.appendLog({ method: "DELETE", key });
         res.status(200).json({
             status: 200,
             message: "key removed successfully",
