@@ -1,17 +1,20 @@
 process.loadEnvFile();
-import app from "./app.js";
+import http from "./http.js";
 import { startCompaction } from "./utils/compaction.js";
 import { expiryWorker } from "./utils/expiryWorker.js";
 import store from "./services/store.service.js";
+import tcp from "./tcp.js";
 console.log("Hello key-value store");
 await store.init();
-const port = process.env.PORT;
-if (!port) {
-    console.log("Port is not defined");
-    process.exit(1);
-}
-app.listen(port, async () => {
-    console.log(`Server is running on port ${port}`);
+//TCP server
+const TCP_PORT = process.env.TCP_PORT;
+tcp.listen(TCP_PORT, () => {
+    console.log(`Server is running on port ${TCP_PORT}`);
+});
+//HTTP server
+const HTTP_PORT = process.env.HTTP_PORT;
+http.listen(HTTP_PORT, async () => {
+    console.log(`Server is running on port ${HTTP_PORT}`);
     await startCompaction();
     expiryWorker(store);
 });
