@@ -1,10 +1,14 @@
 import fs from "node:fs/promises";
+import Store from "./store.service.js";
 class Snapshot {
     constructor() {
         this.SNAPSHOT_FILE = String(process.env.SNAPSHOT_FILE);
     }
-    async writeSnapshot(store) {
-        const data = Object.fromEntries(store);
+    async writeSnapshot(store, expiry) {
+        const data = {
+            data: Object.fromEntries(store),
+            expiry: Object.fromEntries(expiry),
+        };
         try {
             await fs.writeFile(this.SNAPSHOT_FILE, JSON.stringify(data));
         }
@@ -17,8 +21,12 @@ class Snapshot {
     async loadSnapshot() {
         try {
             const data = await fs.readFile(process.env.RENAMED_SNAPSHOT_FILE, "utf-8");
-            const obj = JSON.parse(data);
-            return new Map(Object.entries(obj));
+            const parsed = JSON.parse(data);
+            const expiry = new Map(Object.entries(parsed.expiry));
+            for (const [key, expiresAt] of expiry) {
+                Store.heap.insert({ key, expiresAt: expiresAt });
+            }
+            return new Map(Object.entries(parsed.data));
         }
         catch (error) {
             if (error.code === "ENOENT")
