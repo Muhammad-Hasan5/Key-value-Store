@@ -16,7 +16,7 @@ export async function startCompaction() {
       }
 
       const tempFile = String(process.env.SNAPSHOT_FILE);
-      await snapshot.writeSnapshot(store.getAll());
+      await snapshot.writeSnapshot(store.getAll(), store.getExpiryMap());
       await fs.rename(tempFile, String(process.env.RENAMED_SNAPSHOT_FILE));
       await fs.writeFile(String(process.env.LOG_FILE), "");
     } catch (error: any) {
