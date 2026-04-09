@@ -6,52 +6,71 @@ const tcp = net.createServer((socket: net.Socket) => {
   console.log("Connection Opened");
 
   socket.on("data", (data) => {
-    const input = data.toString().trim();
-    const [command, key, value, ttl] = input.split(" ");
+    const inputs = data.toString().split("\n");
 
-    //SET + ttl
-    if (command === "SET") {
-      if (ttl) {
-        store.set(key!, value!, Number(ttl));
-        wal.appendLog({
-          method: "PUT",
-          key: key!,
-          value: value!,
-          expiresAt: Number(ttl),
-        });
-      } else {
-        store.set(key!, value!, Number(ttl));
-        wal.appendLog({
-          method: "PUT",
-          key: key!,
-          value: value!,
-          expiresAt: undefined,
-        });
+    for (const input of inputs) {
+      if (!input.trim()) continue;
+
+      const [command, key, value, ttl] = input.trim().split(" ");
+
+      let response = "";
+
+      //SET
+      if (command === "SET") { // for inputs with ttl
+        if (ttl !== undefined) {
+          const ttlNum = Number(ttl);
+
+          store.set(key!, value!, ttlNum);
+
+          wal.appendLog({
+            method: "PUT",
+            key: key!,
+            value: value!,
+            expiresAt: Date.now() + ttlNum * 1000,
+          });
+        } else { // for inputs without ttl
+          store.set(key!, value!);
+
+          wal.appendLog({
+            method: "PUT",
+            key: key!,
+            value: value!,
+          });
+        }
+
+        response = "OK\n";
+      } 
+      
+      //GET
+      else if (command === "GET") {
+        const val = store.get(key!);
+        response = (val ?? "NULL") + "\n";
+      } 
+      
+      //DEL
+      else if (command === "DEL") {
+        store.remove(key!);
+        response = "OK\n";
+      } 
+      
+      //unknown commands
+      else {
+        response = "ERR unknown command\n";
       }
-      socket.write("OK\n");
-    }
 
-    //GET
-    else if (command === "GET") {
-      const val = store.get(key!);
-      socket.write((val ?? "NULL") + "\n");
-    }
-
-    //DEL
-    else if (command === "DEL") {
-      store.remove(key!);
-      socket.write("OK\n");
-    }
-
-    //unknown command
-    else {
-      socket.write("ERR unknown command\n");
+      if (socket.writable) {
+        socket.write(response);
+      }
     }
   });
 
-  socket.end("end", () => {
+  socket.on("end", () => {
     console.log("Connection Closed");
+  });
+
+  socket.on("error", (err) => {
+    console.error("Socket error:", err.message);
   });
 });
 
-export default tcp
+export default tcp;
