@@ -8,15 +8,13 @@ type Params = {
 
 export async function set(req: Request, res: Response) {
   try {
-    const { key, value } = req.body || {};
+    const { key, value, ttl } = req.body || {};
 
     if (key === undefined || value === undefined) {
-      return res
-        .status(400)
-        .json({
-          status: 400,
-          message: "key string and its value are required",
-        });
+      return res.status(400).json({
+        status: 400,
+        message: "key string and its value are required",
+      });
     }
 
     if (key === "" || value === "") {
@@ -26,7 +24,12 @@ export async function set(req: Request, res: Response) {
     }
 
     store.set(key, value);
-    wal.appendLog({method: "PUT", key, value});
+
+    if (ttl) {
+      wal.appendLog({ method: "PUT", key, value, expiresAt: ttl });
+    } else {
+      wal.appendLog({ method: "PUT", key, value, expiresAt: undefined });
+    }
 
     return res.status(201).json({
       status: 201,
