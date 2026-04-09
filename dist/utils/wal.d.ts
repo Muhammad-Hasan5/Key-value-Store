@@ -2,6 +2,7 @@ interface pair {
     method: "PUT" | "DELETE";
     key: string;
     value?: string;
+    expiresAt?: number | undefined;
 }
 declare class WAL {
     private queue;

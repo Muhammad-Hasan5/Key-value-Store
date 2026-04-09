@@ -1,10 +1,12 @@
 //write-ahead log
 import fs from "node:fs/promises";
+import Store from "../services/store.service.js";
 
 interface pair {
   method: "PUT" | "DELETE";
   key: string;
   value?: string;
+  expiresAt?: number | undefined;
 }
 
 class WAL {
@@ -75,6 +77,11 @@ class WAL {
 
         if (pair.method === "PUT") {
           store.set(pair.key as string, pair.value as string);
+
+          if (pair.expiresAt && pair.expiresAt > Date.now()) {
+            Store.expiry.set(pair.key, pair.expiresAt);
+            Store.heap.insert({ key: pair.key, expiresAt: pair.expiresAt });
+          }
         }
 
         if (pair.method === "DELETE") {

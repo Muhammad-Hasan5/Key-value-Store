@@ -1,5 +1,6 @@
 //write-ahead log
 import fs from "node:fs/promises";
+import Store from "../services/store.service.js";
 class WAL {
     async flush() {
         if (this.isFlushing)
@@ -60,6 +61,10 @@ class WAL {
                 const pair = JSON.parse(line);
                 if (pair.method === "PUT") {
                     store.set(pair.key, pair.value);
+                    if (pair.expiresAt && pair.expiresAt > Date.now()) {
+                        Store.expiry.set(pair.key, pair.expiresAt);
+                        Store.heap.insert({ key: pair.key, expiresAt: pair.expiresAt });
+                    }
                 }
                 if (pair.method === "DELETE") {
                     store.delete(pair.key);
